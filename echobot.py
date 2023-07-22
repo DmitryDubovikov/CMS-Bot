@@ -1,9 +1,9 @@
-import os
 import logging
-import redis
+import os
 
-from telegram.ext import Filters, Updater
-from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler
+import redis
+from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
+                          MessageHandler, Updater)
 
 _database = None
 
