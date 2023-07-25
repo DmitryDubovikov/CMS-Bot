@@ -1,8 +1,9 @@
 # import logging
 import os
-from dotenv import load_dotenv
 
 import redis
+from dotenv import load_dotenv
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
 
 _database = None
@@ -15,8 +16,34 @@ def start(update, context):
     Бот отвечает пользователю фразой "Привет!" и переводит его в состояние ECHO.
     Теперь в ответ на его команды будет запускаеться хэндлер echo.
     """
-    update.message.reply_text(text="Привет!")
+    keyboard = [
+        [InlineKeyboardButton("Option 1", callback_data="1"), InlineKeyboardButton("Option 2", callback_data="2")],
+        [InlineKeyboardButton("Option 3", callback_data="3")],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    update.message.reply_text("Please choose:", reply_markup=reply_markup)
+
     return "ECHO"
+
+
+def button(update, context):
+    query = update.callback_query
+    query.answer()
+
+    # Get the callback data from the button
+    data = query.data
+
+    # Define your button actions based on the callback data
+    if data == "1":
+        query.edit_message_text(text="You chose Option 1.")
+    elif data == "2":
+        query.edit_message_text(text="You chose Option 2.")
+    elif data == "3":
+        query.edit_message_text(text="You chose Option 3.")
+    else:
+        query.edit_message_text(text="Invalid option.")
 
 
 def echo(update, context):
@@ -26,8 +53,16 @@ def echo(update, context):
     Бот отвечает пользователю тем же, что пользователь ему написал.
     Оставляет пользователя в состоянии ECHO.
     """
-    users_reply = update.message.text
-    update.message.reply_text(users_reply)
+    # users_reply = update.message.text
+    if update.callback_query:
+        # Handle the case of a callback query (button click)
+        users_reply = update.callback_query.data
+        update.callback_query.message.reply_text(users_reply)
+    else:
+        # Handle the case of a regular message
+        users_reply = update.message.text
+        update.message.reply_text(users_reply)
+
     return "ECHO"
 
 
