@@ -1,9 +1,9 @@
 # import logging
 import os
+from dotenv import load_dotenv
 
 import redis
-from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
-                          MessageHandler, Updater)
+from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
 
 _database = None
 
@@ -81,6 +81,7 @@ def get_database_connection():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     token = os.getenv("TELEGRAM_TOKEN")
     updater = Updater(token)
     dispatcher = updater.dispatcher

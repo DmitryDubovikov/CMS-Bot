@@ -20,3 +20,8 @@ make install
 ```
 docker run -d --name redis_db -p 6379:6379 redis
 ```
+
+Запустить бота:
+```
+poetry run python tg_bot.py
+```

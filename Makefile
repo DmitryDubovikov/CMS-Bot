@@ -9,3 +9,7 @@ installprecommit:
 .PHONY: lint
 lint:
 	poetry run pre-commit run --all-files
+
+.PHONY: run
+run:
+	poetry run python echobot.py
