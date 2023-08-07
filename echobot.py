@@ -17,7 +17,10 @@ def start(update, context):
     Теперь в ответ на его команды будет запускаеться хэндлер echo.
     """
     keyboard = [
-        [InlineKeyboardButton("Option 1", callback_data="1"), InlineKeyboardButton("Option 2", callback_data="2")],
+        [
+            InlineKeyboardButton("Option 1", callback_data="1"),
+            InlineKeyboardButton("Option 2", callback_data="2"),
+        ],
         [InlineKeyboardButton("Option 3", callback_data="3")],
     ]
 
@@ -73,11 +76,13 @@ def handle_users_reply(update, context):
         * Нажатие на inline-кнопку в боте
         * Отправка сообщения боту
         * Отправка команды боту
-    Она получает стейт пользователя из базы данных и запускает соответствующую функцию-обработчик (хэндлер).
+    Она получает стейт пользователя из базы данных и запускает
+    соответствующую функцию-обработчик (хэндлер).
     Функция-обработчик возвращает следующее состояние, которое записывается в базу данных.
     Если пользователь только начал пользоваться ботом, Telegram форсит его написать "/start",
     поэтому по этой фразе выставляется стартовое состояние.
-    Если пользователь захочет начать общение с ботом заново, он также может воспользоваться этой командой.
+    Если пользователь захочет начать общение с ботом заново,
+    он также может воспользоваться этой командой.
     """
     db = get_database_connection()
     if update.message:
@@ -117,10 +122,14 @@ def get_database_connection():
 
 if __name__ == "__main__":
     load_dotenv()
-    token = os.getenv("TELEGRAM_TOKEN")
-    updater = Updater(token)
+    telegram_token = os.getenv("TELEGRAM_TOKEN")
+
+    updater = Updater(telegram_token)
+
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
     dispatcher.add_handler(MessageHandler(Filters.text, handle_users_reply))
     dispatcher.add_handler(CommandHandler("start", handle_users_reply))
+
     updater.start_polling()
+    updater.idle()

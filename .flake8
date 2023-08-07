@@ -4,6 +4,6 @@
 ignore = I201, I100
 exclude = .git, __pycache__, .venv
 filename = *.py
-max-line-length = 120
+max-line-length = 100
 max-complexity = 6
 count = true
