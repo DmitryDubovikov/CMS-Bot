@@ -5,8 +5,7 @@ from functools import partial
 import redis
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
-                          MessageHandler, Updater)
+from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
 
 from elasticpath import get_client_credentials_token, get_products
 
@@ -16,11 +15,10 @@ _database = None
 def start(update, context, client_id, client_secret):
     access_token = get_client_credentials_token(client_id, client_secret)
     products = get_products(access_token)
-    print(products)
 
     keyboard = [
-        [el]
-        for el in [
+        [button]
+        for button in [
             InlineKeyboardButton(p["attributes"]["name"], callback_data=p["id"]) for p in products
         ]
     ]
@@ -33,22 +31,22 @@ def start(update, context, client_id, client_secret):
     return "ECHO"
 
 
-def button(update, context):
-    query = update.callback_query
-    query.answer()
+# def button(update, context):
+#     query = update.callback_query
+#     query.answer()
 
-    # Get the callback data from the button
-    data = query.data
+#     # Get the callback data from the button
+#     data = query.data
 
-    # Define your button actions based on the callback data
-    if data == "1":
-        query.edit_message_text(text="You chose Option 1.")
-    elif data == "2":
-        query.edit_message_text(text="You chose Option 2.")
-    elif data == "3":
-        query.edit_message_text(text="You chose Option 3.")
-    else:
-        query.edit_message_text(text="Invalid option.")
+#     # Define your button actions based on the callback data
+#     if data == "1":
+#         query.edit_message_text(text="You chose Option 1.")
+#     elif data == "2":
+#         query.edit_message_text(text="You chose Option 2.")
+#     elif data == "3":
+#         query.edit_message_text(text="You chose Option 3.")
+#     else:
+#         query.edit_message_text(text="Invalid option.")
 
 
 def echo(update, context):
