@@ -31,6 +31,21 @@ def get_product_by_id(access_token, product_id):
     return response.json()["data"]
 
 
+def get_image_link_by_id(access_token, image_id):
+    url = f"https://useast.api.elasticpath.com/v2/files/{image_id}"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+        "accept": "application/json",
+    }
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+
+    image_link = response.json()["data"]["link"]["href"]
+
+    return image_link
+
+
 def get_client_credentials_token(client_id, client_secret):
     global access_token, access_token_expires
 

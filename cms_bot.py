@@ -6,11 +6,14 @@ from textwrap import dedent
 import redis
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
-                          MessageHandler, Updater)
+from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
 
-from elasticpath import (get_client_credentials_token, get_product_by_id,
-                         get_products)
+from elasticpath import (
+    get_client_credentials_token,
+    get_image_link_by_id,
+    get_product_by_id,
+    get_products,
+)
 
 _database = None
 
@@ -44,6 +47,9 @@ def handle_menu(update, context, client_id, client_secret):
 
     access_token = get_client_credentials_token(client_id, client_secret)
     product = get_product_by_id(access_token, product_id)
+    main_image_link = get_image_link_by_id(
+        access_token, product["relationships"]["main_image"]["data"]["id"]
+    )
 
     message_text = f"""\
     {product["attributes"]["name"]}
@@ -51,30 +57,9 @@ def handle_menu(update, context, client_id, client_secret):
     {product["attributes"]["description"]}
     """
 
-    query.edit_message_text(text=dedent(message_text))
+    query.message.reply_photo(photo=main_image_link, caption=dedent(message_text))
 
-    # access_token = get_client_credentials_token(client_id, client_secret)
-    # products = get_products(access_token)
-
-    # keyboard = [
-    #     [
-    #         InlineKeyboardButton(product["attributes"]["name"], callback_data=product["id"])
-    #         for product in products
-    #     ],
-    #     [InlineKeyboardButton("Корзина", callback_data="Корзина")],
-    # ]
-
-    # reply_markup = InlineKeyboardMarkup(keyboard)
-
-    # update.callback_query.message.reply_text(
-    #     "Товары магазина:",
-    #     reply_markup=reply_markup,
-    # )
-
-    # bot.delete_message(
-    #     chat_id=update.callback_query.message.chat.id,
-    #     message_id=update.callback_query.message.message_id,
-    # )
+    query.delete_message(query.message.message_id)
 
     return "HANDLE_MENU"
 
