@@ -97,12 +97,20 @@ def get_customer_cart_items(access_token, customer_id):
     response.raise_for_status()
     cart_items = response.json()
 
-    # url = f"https://api.moltin.com/v2/carts/{customer_id}"
-    # headers = {
-    #     "Authorization": f"Bearer {moltin_access_token}",
-    # }
-    # response = requests.get(url, headers=headers)
-    # response.raise_for_status()
-    # items_sum = response.json()["data"]["meta"]["display_price"]["with_tax"]["amount"]
-
     return cart_items
+
+
+def delete_customer_cart_item(access_token, customer_id, item_id):
+    # TODO: change cart depending on customer id
+
+    url = f"https://useast.api.elasticpath.com/v2/carts/5eb3681e-2d06-4e59-8535-990865cfad06/items/{item_id}"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+        "accept": "application/json",
+    }
+
+    response = requests.delete(url, headers=headers)
+    response.raise_for_status()
+
+    return response

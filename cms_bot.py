@@ -6,12 +6,17 @@ from textwrap import dedent
 import redis
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
-                          MessageHandler, Updater)
+from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
 
-from elasticpath import (add_product_to_customer_cart,
-                         get_client_credentials_token, get_customer_cart_items,
-                         get_image_link_by_id, get_product_by_id, get_products)
+from elasticpath import (
+    add_product_to_customer_cart,
+    get_client_credentials_token,
+    get_customer_cart_items,
+    get_image_link_by_id,
+    get_product_by_id,
+    get_products,
+    delete_customer_cart_item,
+)
 
 _database = None
 
@@ -46,7 +51,7 @@ def handle_menu(update, context, client_id, client_secret):
             InlineKeyboardButton(p["attributes"]["name"], callback_data=p["id"]) for p in products
         ]
     ]
-    keyboard.append([InlineKeyboardButton("Корзина", callback_data="Корзина")])
+    keyboard.append([InlineKeyboardButton("My cart", callback_data="My cart")])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -63,13 +68,12 @@ def handle_description(update, context, client_id, client_secret):
     query = update.callback_query
     chat_id = query.message.chat.id
 
-    if query.data == "Назад":
+    if query.data == "Back":
         handle_menu(update, context, client_id, client_secret)
         return "HANDLE_DESCRIPTION"
 
-    if query.data == "Корзина":
+    if query.data == "My cart":
         handle_cart(update, context, client_id, client_secret)
-
         return "HANDLE_CART"
 
     product_id = query.data
@@ -77,13 +81,9 @@ def handle_description(update, context, client_id, client_secret):
 
     if "unit" in query.data:
         amount, _, product_id = query.data.split()
-
         response = add_product_to_customer_cart(access_token, product_id, int(amount), chat_id)
-
-        # if response.status_code == 200:
-        print(response.status_code)
-
-        return "HANDLE_DESCRIPTION"
+        handle_cart(update, context, client_id, client_secret)
+        return "HANDLE_CART"
 
     product = get_product_by_id(access_token, product_id)
     main_image_link = get_image_link_by_id(
@@ -102,8 +102,8 @@ def handle_description(update, context, client_id, client_secret):
             InlineKeyboardButton("5 unit", callback_data=f"5 unit {product_id}"),
             InlineKeyboardButton("10 unit", callback_data=f"10 unit {product_id}"),
         ],
-        [InlineKeyboardButton("Назад", callback_data="Назад")],
-        [InlineKeyboardButton("Корзина", callback_data="Корзина")],
+        [InlineKeyboardButton("Back", callback_data="Back")],
+        [InlineKeyboardButton("My cart", callback_data="My cart")],
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -121,28 +121,56 @@ def handle_description(update, context, client_id, client_secret):
 
 def handle_cart(update, context, client_id, client_secret):
     query = update.callback_query
+
+    if query.data == "To menu":
+        handle_menu(update, context, client_id, client_secret)
+        return "HANDLE_DESCRIPTION"
+
     access_token = get_client_credentials_token(client_id, client_secret)
     chat_id = query.message.chat.id
 
+    if "Remove" in query.data:
+        _, item_id = query.data.split()
+        response = delete_customer_cart_item(access_token, chat_id, item_id)
+
     cart_items = get_customer_cart_items(access_token, chat_id)
 
+    keyboard = []
     message_text = """\
-            Your cart:
-            """
+                Your cart:
+                """
 
-    for item in cart_items["data"]:
-        message_text += f"""\
+    if cart_items:
+        for item in cart_items["data"]:
+            message_text += f"""\
 
-            {item["name"]}
-            price: {item["unit_price"]["amount"]/100} {item["unit_price"]["currency"]}
-            quantity: {item["quantity"]}
-            value: {item["value"]["amount"]/100} {item["value"]["currency"]}
+                {item["name"]}
+                price: {item["unit_price"]["amount"]/100} {item["unit_price"]["currency"]}
+                quantity: {item["quantity"]}
+                value: {item["value"]["amount"]/100} {item["value"]["currency"]}
 
-            """
+                """
+            keyboard.append(
+                [
+                    InlineKeyboardButton(
+                        f"Remove {item['name']}", callback_data=f"Remove {item['id']}"
+                    )
+                ]
+            )
+        keyboard.append([InlineKeyboardButton("To payment", callback_data="To payment")])
 
-    total_sum_data = cart_items["meta"]["display_price"]["with_tax"]
-    message_text += f"""Total: {total_sum_data["amount"]/100} {total_sum_data["currency"]}"""
-    query.message.reply_text(dedent(message_text))
+        total_sum_data = cart_items["meta"]["display_price"]["with_tax"]
+        message_text += f"""Total: {total_sum_data["amount"]/100} {total_sum_data["currency"]}"""
+
+    else:
+        pass
+
+    keyboard.append([InlineKeyboardButton("To menu", callback_data="To menu")])
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    query.message.reply_text(dedent(message_text), reply_markup=reply_markup)
+
+    query.delete_message(query.message.message_id)
 
     return "HANDLE_CART"
 
