@@ -1,13 +1,16 @@
 # import logging
 import os
 from functools import partial
+from textwrap import dedent
 
 import redis
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
+from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
+                          MessageHandler, Updater)
 
-from elasticpath import get_client_credentials_token, get_products
+from elasticpath import (get_client_credentials_token, get_product_by_id,
+                         get_products)
 
 _database = None
 
@@ -28,25 +31,52 @@ def start(update, context, client_id, client_secret):
     update.message.reply_text("Please choose your fish:", reply_markup=reply_markup)
 
     # return "HANDLE_DESCRIPTION"
-    return "ECHO"
+    # return "ECHO"
+    return "HANDLE_MENU"
 
 
-# def button(update, context):
-#     query = update.callback_query
-#     query.answer()
+def handle_menu(update, context, client_id, client_secret):
+    query = update.callback_query
+    query.answer()
 
-#     # Get the callback data from the button
-#     data = query.data
+    # Get the callback data from the button
+    product_id = query.data
 
-#     # Define your button actions based on the callback data
-#     if data == "1":
-#         query.edit_message_text(text="You chose Option 1.")
-#     elif data == "2":
-#         query.edit_message_text(text="You chose Option 2.")
-#     elif data == "3":
-#         query.edit_message_text(text="You chose Option 3.")
-#     else:
-#         query.edit_message_text(text="Invalid option.")
+    access_token = get_client_credentials_token(client_id, client_secret)
+    product = get_product_by_id(access_token, product_id)
+
+    message_text = f"""\
+    {product["attributes"]["name"]}
+
+    {product["attributes"]["description"]}
+    """
+
+    query.edit_message_text(text=dedent(message_text))
+
+    # access_token = get_client_credentials_token(client_id, client_secret)
+    # products = get_products(access_token)
+
+    # keyboard = [
+    #     [
+    #         InlineKeyboardButton(product["attributes"]["name"], callback_data=product["id"])
+    #         for product in products
+    #     ],
+    #     [InlineKeyboardButton("Корзина", callback_data="Корзина")],
+    # ]
+
+    # reply_markup = InlineKeyboardMarkup(keyboard)
+
+    # update.callback_query.message.reply_text(
+    #     "Товары магазина:",
+    #     reply_markup=reply_markup,
+    # )
+
+    # bot.delete_message(
+    #     chat_id=update.callback_query.message.chat.id,
+    #     message_id=update.callback_query.message.message_id,
+    # )
+
+    return "HANDLE_MENU"
 
 
 def echo(update, context):
@@ -84,7 +114,7 @@ def handle_users_reply(update, context, client_id, client_secret):
     states_functions = {
         "START": partial(start, client_id=client_id, client_secret=client_secret),
         "ECHO": echo,
-        # "HANDLE_MENU": partial(handle_menu, client_id=client_id, client_secret=client_secret),
+        "HANDLE_MENU": partial(handle_menu, client_id=client_id, client_secret=client_secret),
         # "HANDLE_DESCRIPTION": partial(
         #     handle_description, client_id=client_id, client_secret=client_secret
         # ),

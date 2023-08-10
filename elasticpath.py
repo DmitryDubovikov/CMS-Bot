@@ -7,7 +7,24 @@ access_token, access_token_expires = None, None
 
 def get_products(access_token):
     url = "https://useast.api.elasticpath.com/pcm/products"
-    headers = {"Authorization": f"Bearer {access_token}"}
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+        "accept": "application/json",
+    }
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+
+    return response.json()["data"]
+
+
+def get_product_by_id(access_token, product_id):
+    url = f"https://useast.api.elasticpath.com/pcm/products/{product_id}"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+        "accept": "application/json",
+    }
     response = requests.get(url, headers=headers)
     response.raise_for_status()
 
