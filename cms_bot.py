@@ -9,8 +9,9 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
                           MessageHandler, Updater)
 
-from elasticpath import (get_client_credentials_token, get_image_link_by_id,
-                         get_product_by_id, get_products)
+from elasticpath import (add_product_to_customer_cart,
+                         get_client_credentials_token, get_customer_cart_items,
+                         get_image_link_by_id, get_product_by_id, get_products)
 
 _database = None
 
@@ -45,6 +46,7 @@ def handle_menu(update, context, client_id, client_secret):
             InlineKeyboardButton(p["attributes"]["name"], callback_data=p["id"]) for p in products
         ]
     ]
+    keyboard.append([InlineKeyboardButton("Корзина", callback_data="Корзина")])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -59,14 +61,29 @@ def handle_menu(update, context, client_id, client_secret):
 
 def handle_description(update, context, client_id, client_secret):
     query = update.callback_query
-    # chat_id = query.message.chat.id
+    chat_id = query.message.chat.id
 
     if query.data == "Назад":
         handle_menu(update, context, client_id, client_secret)
         return "HANDLE_DESCRIPTION"
 
+    if query.data == "Корзина":
+        handle_cart(update, context, client_id, client_secret)
+
+        return "HANDLE_CART"
+
     product_id = query.data
     access_token = get_client_credentials_token(client_id, client_secret)
+
+    if "unit" in query.data:
+        amount, _, product_id = query.data.split()
+
+        response = add_product_to_customer_cart(access_token, product_id, int(amount), chat_id)
+
+        # if response.status_code == 200:
+        print(response.status_code)
+
+        return "HANDLE_DESCRIPTION"
 
     product = get_product_by_id(access_token, product_id)
     main_image_link = get_image_link_by_id(
@@ -80,7 +97,13 @@ def handle_description(update, context, client_id, client_secret):
     """
 
     keyboard = [
+        [
+            InlineKeyboardButton("1 unit", callback_data=f"1 unit {product_id}"),
+            InlineKeyboardButton("5 unit", callback_data=f"5 unit {product_id}"),
+            InlineKeyboardButton("10 unit", callback_data=f"10 unit {product_id}"),
+        ],
         [InlineKeyboardButton("Назад", callback_data="Назад")],
+        [InlineKeyboardButton("Корзина", callback_data="Корзина")],
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -94,6 +117,34 @@ def handle_description(update, context, client_id, client_secret):
     query.delete_message(query.message.message_id)
 
     return "HANDLE_DESCRIPTION"
+
+
+def handle_cart(update, context, client_id, client_secret):
+    query = update.callback_query
+    access_token = get_client_credentials_token(client_id, client_secret)
+    chat_id = query.message.chat.id
+
+    cart_items = get_customer_cart_items(access_token, chat_id)
+
+    message_text = """\
+            Your cart:
+            """
+
+    for item in cart_items["data"]:
+        message_text += f"""\
+
+            {item["name"]}
+            price: {item["unit_price"]["amount"]/100} {item["unit_price"]["currency"]}
+            quantity: {item["quantity"]}
+            value: {item["value"]["amount"]/100} {item["value"]["currency"]}
+
+            """
+
+    total_sum_data = cart_items["meta"]["display_price"]["with_tax"]
+    message_text += f"""Total: {total_sum_data["amount"]/100} {total_sum_data["currency"]}"""
+    query.message.reply_text(dedent(message_text))
+
+    return "HANDLE_CART"
 
 
 def handle_users_reply(update, context, client_id, client_secret):
@@ -120,7 +171,7 @@ def handle_users_reply(update, context, client_id, client_secret):
         "HANDLE_DESCRIPTION": partial(
             handle_description, client_id=client_id, client_secret=client_secret
         ),
-        # "HANDLE_CART": partial(handle_cart, client_id=client_id, client_secret=client_secret),
+        "HANDLE_CART": partial(handle_cart, client_id=client_id, client_secret=client_secret),
         # "WAITING_EMAIL": partial(handle_email, client_id=client_id, client_secret=client_secret),
     }
     state_handler = states_functions[user_state]
