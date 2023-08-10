@@ -6,14 +6,11 @@ from textwrap import dedent
 import redis
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
+from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
+                          MessageHandler, Updater)
 
-from elasticpath import (
-    get_client_credentials_token,
-    get_image_link_by_id,
-    get_product_by_id,
-    get_products,
-)
+from elasticpath import (get_client_credentials_token, get_image_link_by_id,
+                         get_product_by_id, get_products)
 
 _database = None
 
@@ -31,21 +28,46 @@ def start(update, context, client_id, client_secret):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text("Please choose your fish:", reply_markup=reply_markup)
+    update.message.reply_text("Let's start. Please choose your fish:", reply_markup=reply_markup)
 
-    # return "HANDLE_DESCRIPTION"
-    # return "ECHO"
-    return "HANDLE_MENU"
+    return "HANDLE_DESCRIPTION"
 
 
 def handle_menu(update, context, client_id, client_secret):
     query = update.callback_query
-    query.answer()
-
-    # Get the callback data from the button
-    product_id = query.data
 
     access_token = get_client_credentials_token(client_id, client_secret)
+    products = get_products(access_token)
+
+    keyboard = [
+        [button]
+        for button in [
+            InlineKeyboardButton(p["attributes"]["name"], callback_data=p["id"]) for p in products
+        ]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    query.message.reply_text(
+        "This is our menu. Please choose your fish:", reply_markup=reply_markup
+    )
+
+    query.delete_message(query.message.message_id)
+
+    return "HANDLE_DESCRIPTION"
+
+
+def handle_description(update, context, client_id, client_secret):
+    query = update.callback_query
+    # chat_id = query.message.chat.id
+
+    if query.data == "Назад":
+        handle_menu(update, context, client_id, client_secret)
+        return "HANDLE_DESCRIPTION"
+
+    product_id = query.data
+    access_token = get_client_credentials_token(client_id, client_secret)
+
     product = get_product_by_id(access_token, product_id)
     main_image_link = get_image_link_by_id(
         access_token, product["relationships"]["main_image"]["data"]["id"]
@@ -57,25 +79,21 @@ def handle_menu(update, context, client_id, client_secret):
     {product["attributes"]["description"]}
     """
 
-    query.message.reply_photo(photo=main_image_link, caption=dedent(message_text))
+    keyboard = [
+        [InlineKeyboardButton("Назад", callback_data="Назад")],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    query.message.reply_photo(
+        photo=main_image_link,
+        caption=dedent(message_text),
+        reply_markup=reply_markup,
+    )
 
     query.delete_message(query.message.message_id)
 
-    return "HANDLE_MENU"
-
-
-def echo(update, context):
-    # users_reply = update.message.text
-    if update.callback_query:
-        # Handle the case of a callback query (button click)
-        users_reply = update.callback_query.data
-        update.callback_query.message.reply_text(users_reply)
-    else:
-        # Handle the case of a regular message
-        users_reply = update.message.text
-        update.message.reply_text(users_reply)
-
-    return "ECHO"
+    return "HANDLE_DESCRIPTION"
 
 
 def handle_users_reply(update, context, client_id, client_secret):
@@ -98,11 +116,10 @@ def handle_users_reply(update, context, client_id, client_secret):
 
     states_functions = {
         "START": partial(start, client_id=client_id, client_secret=client_secret),
-        "ECHO": echo,
         "HANDLE_MENU": partial(handle_menu, client_id=client_id, client_secret=client_secret),
-        # "HANDLE_DESCRIPTION": partial(
-        #     handle_description, client_id=client_id, client_secret=client_secret
-        # ),
+        "HANDLE_DESCRIPTION": partial(
+            handle_description, client_id=client_id, client_secret=client_secret
+        ),
         # "HANDLE_CART": partial(handle_cart, client_id=client_id, client_secret=client_secret),
         # "WAITING_EMAIL": partial(handle_email, client_id=client_id, client_secret=client_secret),
     }
