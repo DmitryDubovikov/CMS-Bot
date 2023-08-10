@@ -1,5 +1,6 @@
 # import logging
 import os
+import re
 from functools import partial
 from textwrap import dedent
 
@@ -126,6 +127,12 @@ def handle_cart(update, context, client_id, client_secret):
         handle_menu(update, context, client_id, client_secret)
         return "HANDLE_DESCRIPTION"
 
+    if query.data == "To payment":
+        query.message.reply_text(
+            text="To place your order and make a payment, please provide your email.",
+        )
+        return "WAITING_EMAIL"
+
     access_token = get_client_credentials_token(client_id, client_secret)
     chat_id = query.message.chat.id
 
@@ -175,6 +182,20 @@ def handle_cart(update, context, client_id, client_secret):
     return "HANDLE_CART"
 
 
+def handle_email(update, context, client_id, client_secret):
+    query = update.callback_query
+    message = update.message
+
+    pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+    if message.text and re.match(pattern, message.text) is not None:
+        message_text = "placing your order..."
+    else:
+        message_text = "incorrect email, please provide your email"
+    message.reply_text(message_text)
+
+    return "WAITING_EMAIL"
+
+
 def handle_users_reply(update, context, client_id, client_secret):
     db = get_database_connection()
     if update.message:
@@ -200,7 +221,7 @@ def handle_users_reply(update, context, client_id, client_secret):
             handle_description, client_id=client_id, client_secret=client_secret
         ),
         "HANDLE_CART": partial(handle_cart, client_id=client_id, client_secret=client_secret),
-        # "WAITING_EMAIL": partial(handle_email, client_id=client_id, client_secret=client_secret),
+        "WAITING_EMAIL": partial(handle_email, client_id=client_id, client_secret=client_secret),
     }
     state_handler = states_functions[user_state]
     # Если вы вдруг не заметите, что python-telegram-bot перехватывает ошибки.
@@ -226,8 +247,6 @@ if __name__ == "__main__":
 
     elasticpath_client_id = os.getenv("ELASTICPATH_CLIENT_ID")
     elasticpath_client_secret = os.getenv("ELASTICPATH_CLIENT_SECRET")
-
-    # customer_elasticpath_id = os.getenv("CUSTOMER_ELASTICPATH_ID")
 
     updater = Updater(telegram_token)
 
