@@ -7,18 +7,13 @@ from textwrap import dedent
 import redis
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
+from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
+                          MessageHandler, Updater)
 
-from elasticpath import (
-    add_product_to_customer_cart,
-    get_client_credentials_token,
-    get_customer_cart_items,
-    get_image_link_by_id,
-    get_product_by_id,
-    get_products,
-    delete_customer_cart_item,
-    create_customer,
-)
+from elasticpath import (add_product_to_customer_cart, create_customer,
+                         delete_customer_cart_item,
+                         get_client_credentials_token, get_customer_cart_items,
+                         get_image_link_by_id, get_product_by_id, get_products)
 
 _database = None
 
@@ -83,7 +78,7 @@ def handle_description(update, context, client_id, client_secret):
 
     if "unit" in query.data:
         amount, _, product_id = query.data.split()
-        response = add_product_to_customer_cart(access_token, product_id, int(amount), chat_id)
+        add_product_to_customer_cart(access_token, product_id, int(amount), chat_id)
         handle_cart(update, context, client_id, client_secret)
         return "HANDLE_CART"
 
@@ -139,7 +134,7 @@ def handle_cart(update, context, client_id, client_secret):
 
     if "Remove" in query.data:
         _, item_id = query.data.split()
-        response = delete_customer_cart_item(access_token, chat_id, item_id)
+        delete_customer_cart_item(access_token, chat_id, item_id)
 
     cart_items = get_customer_cart_items(access_token, chat_id)
 
@@ -184,10 +179,10 @@ def handle_cart(update, context, client_id, client_secret):
 
 
 def handle_email(update, context, client_id, client_secret):
-    query = update.callback_query
+    # query = update.callback_query
     message = update.message
     email = update.message.text
-    chat_id = update.message.chat_id
+    # chat_id = update.message.chat_id
 
     pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
     if email and re.match(pattern, email) is not None:
