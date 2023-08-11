@@ -7,13 +7,18 @@ from textwrap import dedent
 import redis
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
-                          MessageHandler, Updater)
+from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler, Updater
 
-from elasticpath import (add_product_to_customer_cart, create_customer,
-                         delete_customer_cart_item,
-                         get_client_credentials_token, get_customer_cart_items,
-                         get_image_link_by_id, get_product_by_id, get_products)
+from elasticpath import (
+    add_product_to_customer_cart,
+    create_customer,
+    delete_customer_cart_item,
+    get_client_credentials_token,
+    get_customer_cart_items,
+    get_image_link_by_id,
+    get_product_by_id,
+    get_products,
+)
 
 _database = None
 
@@ -179,10 +184,8 @@ def handle_cart(update, context, client_id, client_secret):
 
 
 def handle_email(update, context, client_id, client_secret):
-    # query = update.callback_query
     message = update.message
     email = update.message.text
-    # chat_id = update.message.chat_id
 
     pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
     if email and re.match(pattern, email) is not None:
@@ -227,9 +230,7 @@ def handle_users_reply(update, context, client_id, client_secret):
         "WAITING_EMAIL": partial(handle_email, client_id=client_id, client_secret=client_secret),
     }
     state_handler = states_functions[user_state]
-    # Если вы вдруг не заметите, что python-telegram-bot перехватывает ошибки.
-    # Оставляю этот try...except, чтобы код не падал молча.
-    # Этот фрагмент можно переписать.
+
     try:
         next_state = state_handler(update, context)
         db.set(chat_id, next_state)

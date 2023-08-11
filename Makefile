@@ -12,4 +12,4 @@ lint:
 
 .PHONY: run
 run:
-	poetry run python echobot.py
+	poetry run python cms_bot.py
