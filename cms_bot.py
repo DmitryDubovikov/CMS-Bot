@@ -17,6 +17,7 @@ from elasticpath import (
     get_product_by_id,
     get_products,
     delete_customer_cart_item,
+    create_customer,
 )
 
 _database = None
@@ -185,10 +186,17 @@ def handle_cart(update, context, client_id, client_secret):
 def handle_email(update, context, client_id, client_secret):
     query = update.callback_query
     message = update.message
+    email = update.message.text
+    chat_id = update.message.chat_id
 
     pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-    if message.text and re.match(pattern, message.text) is not None:
-        message_text = "placing your order..."
+    if email and re.match(pattern, email) is not None:
+        name = update.message.chat.username
+
+        access_token = get_client_credentials_token(client_id, client_secret)
+        response = create_customer(access_token, name, email)
+
+        message_text = "Created :)" if response.status_code == 201 else "Not created :("
     else:
         message_text = "incorrect email, please provide your email"
     message.reply_text(message_text)

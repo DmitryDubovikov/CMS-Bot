@@ -114,3 +114,24 @@ def delete_customer_cart_item(access_token, customer_id, item_id):
     response.raise_for_status()
 
     return response
+
+
+def create_customer(access_token, name, email):
+    url = f"https://useast.api.elasticpath.com/v2/customers"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+        "accept": "application/json",
+    }
+
+    payload = {
+        "data": {
+            "type": "customer",
+            "name": name,
+            "email": email,
+            "password": "mysecretpassword",
+        }
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    return response
