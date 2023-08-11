@@ -70,8 +70,7 @@ def get_image_link_by_id(access_token, image_id):
 
 
 def add_product_to_customer_cart(access_token, product_id, amount, customer_id):
-    # TODO: change cart depending on customer id
-    url = f"https://useast.api.elasticpath.com/v2/carts/5eb3681e-2d06-4e59-8535-990865cfad06/items"
+    url = f"https://useast.api.elasticpath.com/v2/carts/{customer_id}/items"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
@@ -85,8 +84,7 @@ def add_product_to_customer_cart(access_token, product_id, amount, customer_id):
 
 
 def get_customer_cart_items(access_token, customer_id):
-    # TODO: change cart depending on customer id
-    url = f"https://useast.api.elasticpath.com/v2/carts/5eb3681e-2d06-4e59-8535-990865cfad06/items"
+    url = f"https://useast.api.elasticpath.com/v2/carts/{customer_id}/items"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
@@ -101,9 +99,7 @@ def get_customer_cart_items(access_token, customer_id):
 
 
 def delete_customer_cart_item(access_token, customer_id, item_id):
-    # TODO: change cart depending on customer id
-
-    url = f"https://useast.api.elasticpath.com/v2/carts/5eb3681e-2d06-4e59-8535-990865cfad06/items/{item_id}"
+    url = f"https://useast.api.elasticpath.com/v2/carts/{customer_id}/items/{item_id}"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
@@ -117,7 +113,7 @@ def delete_customer_cart_item(access_token, customer_id, item_id):
 
 
 def create_customer(access_token, name, email):
-    url = f"https://useast.api.elasticpath.com/v2/customers"
+    url = "https://useast.api.elasticpath.com/v2/customers"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
